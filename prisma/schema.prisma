@@ -1,0 +1,531 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String?   @db.VarChar(100)
+  email            String    @unique @db.VarChar(255)
+  password_hash    String?
+  role             String?   @default("user") @db.VarChar(20)
+  avatar           String?
+  status           String?   @default("active") @db.VarChar(20)
+  email_verified   Boolean?  @default(false)
+  last_login       DateTime? @db.Timestamp()
+  created_at       DateTime? @default(now()) @db.Timestamp()
+  updated_at       DateTime? @updatedAt @db.Timestamp()
+
+  casinos          Casino[]
+  affiliate_clicks AffiliateClick[]
+  reviews          Review[]
+  blogs            Blog[]
+  news             News[]
+  comments         Comment[]
+  media_library    MediaLibrary[]
+  activity_logs    ActivityLog[]
+  favorite_casinos FavoriteCasino[]
+}
+
+model Casino {
+  id                      String    @id @default(uuid()) @db.Uuid
+  name                    String?   @db.VarChar(255)
+  slug                    String?   @unique @db.VarChar(255)
+  logo                    String?
+  featured_image          String?
+  website_url             String?
+  affiliate_url           String?
+  affiliate_program_name  String?   @db.VarChar(255)
+  affiliate_program_link  String?
+  short_description       String?
+  overview                String?
+  editor_view             String?
+  rating                  Decimal?  @db.Decimal(2, 1)
+  visits                  Int?      @default(0)
+  established_year        Int?
+  company_name            String?   @db.VarChar(255)
+  license_authority       String?   @db.VarChar(255)
+  minimum_deposit         Decimal?  @db.Decimal(10, 2)
+  withdrawal_time         String?   @db.VarChar(100)
+  support_methods         String[]
+  status                  String?   @default("active") @db.VarChar(20)
+  featured                Boolean?  @default(false)
+  hot_casino              Boolean?  @default(false)
+  recommended_by_experts  Boolean?  @default(false)
+  certified_casino        Boolean?  @default(false)
+  mobile_friendly         Boolean?  @default(false)
+  crypto_supported        Boolean?  @default(false)
+  live_casino             Boolean?  @default(false)
+  sports_betting          Boolean?  @default(false)
+  responsible_gaming      Boolean?  @default(false)
+  ranking_order           Int?      @default(0)
+  ranking_position        String?   @default("middle") @db.VarChar(20)
+  meta_title              String?   @db.VarChar(255)
+  meta_description        String?
+  meta_keywords           String[]
+  created_by              String?   @db.Uuid
+  created_at              DateTime? @default(now()) @db.Timestamp()
+  updated_at              DateTime? @updatedAt @db.Timestamp()
+
+  creator                 User?     @relation(fields: [created_by], references: [id])
+  
+  languages               CasinoLanguage[]
+  bonuses                 CasinoBonus[]
+  features                CasinoFeature[]
+  pros                    CasinoPros[]
+  cons                    CasinoCons[]
+  payment_methods         CasinoPaymentMethod[]
+  currencies              CasinoCurrency[]
+  game_providers          CasinoGameProvider[]
+  tags                    CasinoTagMapping[]
+  categories              CasinoCategoryMapping[]
+  game_types              CasinoGameTypeMapping[]
+  available_countries     CasinoAvailableCountry[]
+  restricted_countries    CasinoRestrictedCountry[]
+  screenshots             CasinoScreenshot[]
+  gallery_videos          CasinoGalleryVideo[]
+  faqs                    CasinoFaq[]
+  badges                  CasinoBadgeMapping[]
+  reviews_summary         CasinoReviewsSummary?
+  
+  reviews                 Review[]
+  favorited_by            FavoriteCasino[]
+  affiliate_links         AffiliateLink[]
+
+  @@index([slug])
+  @@index([featured])
+  @@index([status])
+  @@index([rating])
+  @@index([created_at])
+}
+
+model CasinoLanguage {
+  id         String   @id @default(uuid()) @db.Uuid
+  casino_id  String   @db.Uuid
+  language   String   @db.VarChar(100)
+  casino     Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoBonus {
+  id                   String    @id @default(uuid()) @db.Uuid
+  casino_id            String    @db.Uuid
+  title                String    @db.VarChar(255)
+  type                 String    @db.VarChar(100) // Welcome, Free Spins, Cashback, etc.
+  amount               String    @db.VarChar(100)
+  bonus_code           String?   @db.VarChar(100)
+  wagering_requirement String?   @db.VarChar(100)
+  sort_order           Int?      @default(0)
+  created_at           DateTime? @default(now()) @db.Timestamp()
+  updated_at           DateTime? @updatedAt @db.Timestamp()
+
+  casino               Casino    @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoFeature {
+  id        String   @id @default(uuid()) @db.Uuid
+  casino_id String   @db.Uuid
+  feature   String   @db.VarChar(255)
+  casino    Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoPros {
+  id        String   @id @default(uuid()) @db.Uuid
+  casino_id String   @db.Uuid
+  content   String
+  casino    Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoCons {
+  id        String   @id @default(uuid()) @db.Uuid
+  casino_id String   @db.Uuid
+  content   String
+  casino    Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoPaymentMethod {
+  id          String   @id @default(uuid()) @db.Uuid
+  casino_id   String   @db.Uuid
+  method_name String   @db.VarChar(100)
+  casino      Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoCurrency {
+  id            String   @id @default(uuid()) @db.Uuid
+  casino_id     String   @db.Uuid
+  currency_code String   @db.VarChar(20)
+  casino        Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoGameProvider {
+  id            String   @id @default(uuid()) @db.Uuid
+  casino_id     String   @db.Uuid
+  provider_name String   @db.VarChar(150)
+  casino        Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoTag {
+  id      String             @id @default(uuid()) @db.Uuid
+  name    String             @db.VarChar(100)
+  slug    String             @unique @db.VarChar(100)
+  casinos CasinoTagMapping[]
+}
+
+model CasinoTagMapping {
+  casino_id String    @db.Uuid
+  tag_id    String    @db.Uuid
+  casino    Casino    @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+  tag       CasinoTag @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([casino_id, tag_id])
+}
+
+model CasinoCategory {
+  id         String                  @id @default(uuid()) @db.Uuid
+  name       String?                 @db.VarChar(100)
+  slug       String?                 @db.VarChar(100)
+  created_at DateTime?               @default(now()) @db.Timestamp()
+  casinos    CasinoCategoryMapping[]
+}
+
+model CasinoCategoryMapping {
+  casino_id   String         @db.Uuid
+  category_id String         @db.Uuid
+  casino      Casino         @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+  category    CasinoCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@id([casino_id, category_id])
+}
+
+model GameType {
+  id         String                  @id @default(uuid()) @db.Uuid
+  name       String?                 @db.VarChar(100)
+  slug       String?                 @db.VarChar(100)
+  created_at DateTime?               @default(now()) @db.Timestamp()
+  casinos    CasinoGameTypeMapping[]
+}
+
+model CasinoGameTypeMapping {
+  casino_id    String   @db.Uuid
+  game_type_id String   @db.Uuid
+  casino       Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+  game_type    GameType @relation(fields: [game_type_id], references: [id], onDelete: Cascade)
+
+  @@id([casino_id, game_type_id])
+}
+
+model Country {
+  id                     String   @id @default(uuid()) @db.Uuid
+  name                   String   @db.VarChar(150)
+  code                   String   @unique @db.VarChar(10)
+
+  regionId               String?  @db.Uuid
+  region                 Region?  @relation(fields: [regionId], references: [id], onDelete: SetNull)
+
+  available_in_casinos   CasinoAvailableCountry[]
+  restricted_in_casinos  CasinoRestrictedCountry[]
+}
+
+model Region {
+  id         String     @id @default(uuid()) @db.Uuid
+  name       String     @unique @db.VarChar(100)
+  slug       String     @unique @db.VarChar(100)
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  countries  Country[]
+}
+model CasinoAvailableCountry {
+  casino_id  String  @db.Uuid
+  country_id String  @db.Uuid
+  casino     Casino  @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+  country    Country @relation(fields: [country_id], references: [id], onDelete: Cascade)
+
+  @@id([casino_id, country_id])
+}
+
+model CasinoRestrictedCountry {
+  casino_id  String  @db.Uuid
+  country_id String  @db.Uuid
+  casino     Casino  @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+  country    Country @relation(fields: [country_id], references: [id], onDelete: Cascade)
+
+  @@id([casino_id, country_id])
+}
+
+model CasinoScreenshot {
+  id         String   @id @default(uuid()) @db.Uuid
+  casino_id  String   @db.Uuid
+  image_url  String
+  sort_order Int?     @default(0)
+  casino     Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoGalleryVideo {
+  id         String   @id @default(uuid()) @db.Uuid
+  casino_id  String   @db.Uuid
+  video_url  String
+  title      String?  @db.VarChar(255)
+  sort_order Int?     @default(0)
+  casino     Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoFaq {
+  id         String   @id @default(uuid()) @db.Uuid
+  casino_id  String   @db.Uuid
+  question   String
+  answer     String
+  sort_order Int?     @default(0)
+  casino     Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoBadge {
+  id      String               @id @default(uuid()) @db.Uuid
+  name    String               @db.VarChar(100)
+  slug    String               @unique @db.VarChar(100)
+  casinos CasinoBadgeMapping[]
+}
+
+model CasinoBadgeMapping {
+  casino_id String      @db.Uuid
+  badge_id  String      @db.Uuid
+  casino    Casino      @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+  badge     CasinoBadge @relation(fields: [badge_id], references: [id], onDelete: Cascade)
+
+  @@id([casino_id, badge_id])
+}
+
+model CasinoReviewsSummary {
+  casino_id      String   @id @db.Uuid
+  average_rating Decimal? @db.Decimal(2, 1)
+  total_reviews  Int?     @default(0)
+  total_clicks   Int?     @default(0)
+  total_views    Int?     @default(0)
+  casino         Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model AffiliateLink {
+  id             String    @id @default(uuid()) @db.Uuid
+  casino_id      String?   @db.Uuid
+  title          String?   @db.VarChar(255)
+  affiliate_url  String?
+  button_text    String?   @db.VarChar(100)
+  clicks         Int?      @default(0)
+  status         Boolean?  @default(true)
+  created_at     DateTime? @default(now()) @db.Timestamp()
+  updated_at     DateTime? @updatedAt @db.Timestamp()
+
+  casino         Casino?   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+  clicks_data    AffiliateClick[]
+}
+
+model AffiliateClick {
+  id                String    @id @default(uuid()) @db.Uuid
+  affiliate_link_id String?   @db.Uuid
+  user_id           String?   @db.Uuid
+  ip_address        String?   @db.VarChar(100)
+  country           String?   @db.VarChar(100)
+  device            String?   @db.VarChar(50)
+  clicked_at        DateTime? @default(now()) @db.Timestamp()
+
+  affiliate_link    AffiliateLink? @relation(fields: [affiliate_link_id], references: [id])
+  user              User?          @relation(fields: [user_id], references: [id])
+}
+
+model Review {
+  id               String    @id @default(uuid()) @db.Uuid
+  casino_id        String?   @db.Uuid
+  author_id        String?   @db.Uuid
+  title            String?   @db.VarChar(255)
+  slug             String?   @unique @db.VarChar(255)
+  featured_image   String?
+  content          String?
+  rating           Decimal?  @db.Decimal(2, 1)
+  meta_title       String?   @db.VarChar(255)
+  meta_description String?
+  status           String?   @default("draft") @db.VarChar(20)
+  published_at     DateTime? @db.Timestamp()
+  created_at       DateTime? @default(now()) @db.Timestamp()
+  updated_at       DateTime? @updatedAt @db.Timestamp()
+
+  casino           Casino?   @relation(fields: [casino_id], references: [id])
+  author           User?     @relation(fields: [author_id], references: [id])
+  comments         Comment[]
+}
+
+model Blog {
+  id               String    @id @default(uuid()) @db.Uuid
+  author_id        String?   @db.Uuid
+  title            String?   @db.VarChar(255)
+  slug             String?   @unique @db.VarChar(255)
+  featured_image   String?
+  excerpt          String?
+  content          String?
+  meta_title       String?   @db.VarChar(255)
+  meta_description String?
+  status           String?   @default("draft") @db.VarChar(20)
+  published_at     DateTime? @db.Timestamp()
+  created_at       DateTime? @default(now()) @db.Timestamp()
+  updated_at       DateTime? @updatedAt @db.Timestamp()
+
+  author           User?     @relation(fields: [author_id], references: [id])
+  comments         Comment[]
+}
+
+model News {
+  id               String    @id @default(uuid()) @db.Uuid
+  author_id        String?   @db.Uuid
+  title            String?   @db.VarChar(255)
+  slug             String?   @unique @db.VarChar(255)
+  featured_image   String?
+  content          String?
+  meta_title       String?   @db.VarChar(255)
+  meta_description String?
+  status           String?   @default("draft") @db.VarChar(20)
+  published_at     DateTime? @db.Timestamp()
+  created_at       DateTime? @default(now()) @db.Timestamp()
+  updated_at       DateTime? @updatedAt @db.Timestamp()
+
+  author           User?     @relation(fields: [author_id], references: [id])
+}
+
+model Faq {
+  id         String    @id @default(uuid()) @db.Uuid
+  question   String?
+  answer     String?
+  category   String?   @db.VarChar(100)
+  sort_order Int?      @default(0)
+  status     Boolean?  @default(true)
+  created_at DateTime? @default(now()) @db.Timestamp()
+  updated_at DateTime? @updatedAt @db.Timestamp()
+}
+
+model Banner {
+  id           String    @id @default(uuid()) @db.Uuid
+  title        String?   @db.VarChar(255)
+  image_url    String?
+  redirect_url String?
+  position     String?   @db.VarChar(100)
+  status       Boolean?  @default(true)
+  start_date   DateTime? @db.Timestamp()
+  end_date     DateTime? @db.Timestamp()
+  clicks       Int?      @default(0)
+  impressions  Int?      @default(0)
+  created_at   DateTime? @default(now()) @db.Timestamp()
+  updated_at   DateTime? @updatedAt @db.Timestamp()
+}
+
+model Comment {
+  id         String    @id @default(uuid()) @db.Uuid
+  user_id    String?   @db.Uuid
+  blog_id    String?   @db.Uuid
+  review_id  String?   @db.Uuid
+  comment    String?
+  status     String?   @default("pending") @db.VarChar(20)
+  created_at DateTime? @default(now()) @db.Timestamp()
+  updated_at DateTime? @updatedAt @db.Timestamp()
+
+  user       User?     @relation(fields: [user_id], references: [id])
+  blog       Blog?     @relation(fields: [blog_id], references: [id])
+  review     Review?   @relation(fields: [review_id], references: [id])
+}
+
+model MediaLibrary {
+  id            String    @id @default(uuid()) @db.Uuid
+  file_name     String?   @db.VarChar(255)
+  original_name String?   @db.VarChar(255)
+  file_url      String?
+  file_type     String?   @db.VarChar(50)
+  mime_type     String?   @db.VarChar(100)
+  file_size     BigInt?
+  width         Int?
+  height        Int?
+  duration      Int?
+  folder        String?   @db.VarChar(100)
+  uploaded_by   String?   @db.Uuid
+  created_at    DateTime? @default(now()) @db.Timestamp()
+  updated_at    DateTime? @updatedAt @db.Timestamp()
+
+  uploader      User?     @relation(fields: [uploaded_by], references: [id])
+}
+
+model SeoMeta {
+  id               String    @id @default(uuid()) @db.Uuid
+  entity_type      String?   @db.VarChar(50)
+  entity_id        String?   @db.Uuid
+  meta_title       String?   @db.VarChar(255)
+  meta_description String?
+  canonical_url    String?
+  og_image         String?
+  keywords         String[]
+  created_at       DateTime? @default(now()) @db.Timestamp()
+  updated_at       DateTime? @updatedAt @db.Timestamp()
+}
+
+model SiteSetting {
+  id               Int       @id @default(1)
+  site_name        String?   @db.VarChar(255)
+  site_logo        String?
+  favicon          String?
+  contact_email    String?   @db.VarChar(255)
+  footer_text      String?
+  facebook_url     String?
+  twitter_url      String?
+  instagram_url    String?
+  maintenance_mode Boolean?  @default(false)
+  updated_at       DateTime? @updatedAt @db.Timestamp()
+}
+
+model ActivityLog {
+  id         String    @id @default(uuid()) @db.Uuid
+  admin_id   String?   @db.Uuid
+  action     String?   @db.VarChar(255)
+  table_name String?   @db.VarChar(100)
+  record_id  String?   @db.Uuid
+  old_data   Json?
+  new_data   Json?
+  ip_address String?   @db.VarChar(100)
+  created_at DateTime? @default(now()) @db.Timestamp()
+
+  admin      User?     @relation(fields: [admin_id], references: [id])
+}
+
+model NewsletterSubscriber {
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  subscribed_at DateTime? @default(now()) @db.Timestamp()
+}
+
+model FavoriteCasino {
+  id        String   @id @default(uuid()) @db.Uuid
+  user_id   String   @db.Uuid
+  casino_id String   @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamp()
+
+  user   User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  casino Casino @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, casino_id])
+}
+
+model BannedCountry {
+  id           String    @id @default(uuid()) @db.Uuid
+  country_code String    @unique @db.VarChar(10)
+  country_name String    @db.VarChar(150)
+  created_at   DateTime? @default(now()) @db.Timestamp()
+}
+
+model EmailCampaign {
+  id           String    @id @default(uuid()) @db.Uuid
+  subject      String?   @db.VarChar(255)
+  body         String?
+  status       String?   @default("draft") @db.VarChar(20) // draft, scheduling, sending, completed
+  target       String?   @default("newsletter") @db.VarChar(50) // newsletter, all_users
+  sent_count   Int?      @default(0)
+  created_at   DateTime? @default(now()) @db.Timestamp()
+  updated_at   DateTime? @updatedAt @db.Timestamp()
+}
