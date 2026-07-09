@@ -11,6 +11,15 @@ const splitByCommaOrNewline = (val: any): string[] => {
   return val.split(',').map((s: string) => s.trim()).filter(Boolean);
 };
 
+const truncateString = (val: any, maxLength: number): string => {
+  if (!val || typeof val !== 'string') return '';
+  if (val.length > maxLength) {
+    console.log(`Truncating field from ${val.length} to ${maxLength} characters: ${val.substring(0, 50)}...`);
+    return val.substring(0, maxLength);
+  }
+  return val;
+};
+
 export const getCasinos = async (req: Request, res: Response) => {
   try {
     const casinos = await prisma.casino.findMany({
@@ -123,9 +132,39 @@ export const createCasino = async (req: Request, res: Response) => {
       }
     }
 
+    // Log all string fields to identify which one is too long
+    console.log('Creating casino with data:', {
+      name: casinoData.name?.length,
+      slug: casinoData.slug?.length,
+      affiliate_program_name: casinoData.affiliate_program_name?.length,
+      company_name: casinoData.company_name?.length,
+      license_authority: casinoData.license_authority?.length,
+      withdrawal_time: casinoData.withdrawal_time?.length,
+      meta_title: casinoData.meta_title?.length,
+      status: casinoData.status?.length,
+      ranking_position: casinoData.ranking_position?.length,
+    });
+
     const newCasino = await prisma.casino.create({
       data: {
-        ...casinoData,
+        name: truncateString(casinoData.name, 255),
+        slug: truncateString(casinoData.slug, 255),
+        logo: truncateString(casinoData.logo, 5000),
+        featured_image: truncateString(casinoData.featured_image, 5000),
+        website_url: truncateString(casinoData.website_url, 5000),
+        affiliate_url: truncateString(casinoData.affiliate_url, 5000),
+        affiliate_program_name: truncateString(casinoData.affiliate_program_name, 255),
+        affiliate_program_link: truncateString(casinoData.affiliate_program_link, 5000),
+        short_description: truncateString(casinoData.short_description, 5000),
+        overview: truncateString(casinoData.overview, 50000),
+        editor_view: truncateString(casinoData.editor_view, 50000),
+        company_name: truncateString(casinoData.company_name, 255),
+        license_authority: truncateString(casinoData.license_authority, 255),
+        withdrawal_time: truncateString(casinoData.withdrawal_time, 100),
+        meta_title: truncateString(casinoData.meta_title, 255),
+        meta_description: truncateString(casinoData.meta_description, 5000),
+        status: truncateString(casinoData.status, 20),
+        ranking_position: truncateString(casinoData.ranking_position, 20),
         rating: casinoData.rating ? parseFloat(casinoData.rating) : null,
         minimum_deposit: casinoData.minimum_deposit ? parseFloat(casinoData.minimum_deposit) : null,
         visits: casinoData.visits ? parseInt(casinoData.visits, 10) : 0,
@@ -143,35 +182,35 @@ export const createCasino = async (req: Request, res: Response) => {
         meta_keywords: splitByCommaOrNewline(casinoData.meta_keywords),
         
         languages: languages ? {
-          create: splitByCommaOrNewline(languages).map((lang: string) => ({ language: lang }))
+          create: splitByCommaOrNewline(languages).map((lang: string) => ({ language: truncateString(lang, 100) })).filter(item => item.language !== '')
         } : undefined,
         bonuses: bonuses ? {
           create: bonuses.map((bonus: any) => ({
-            title: bonus.title,
-            type: bonus.type,
-            amount: bonus.amount,
-            bonus_code: bonus.bonus_code || null,
-            wagering_requirement: bonus.wagering_requirement || null,
+            title: truncateString(bonus.title, 255),
+            type: truncateString(bonus.type, 100),
+            amount: truncateString(bonus.amount, 100),
+            bonus_code: bonus.bonus_code ? truncateString(bonus.bonus_code, 100) : null,
+            wagering_requirement: bonus.wagering_requirement ? truncateString(bonus.wagering_requirement, 100) : null,
             sort_order: bonus.sort_order ? parseInt(bonus.sort_order, 10) : 0
           }))
         } : undefined,
         features: features ? {
-          create: splitByCommaOrNewline(features).map((feat: string) => ({ feature: feat }))
+          create: splitByCommaOrNewline(features).map((feat: string) => ({ feature: truncateString(feat, 255) })).filter(item => item.feature !== '')
         } : undefined,
         pros: pros ? {
-          create: splitByCommaOrNewline(pros).map((pro: string) => ({ content: pro }))
+          create: splitByCommaOrNewline(pros).map((pro: string) => ({ content: truncateString(pro, 5000) })).filter(item => item.content !== '')
         } : undefined,
         cons: cons ? {
-          create: splitByCommaOrNewline(cons).map((con: string) => ({ content: con }))
+          create: splitByCommaOrNewline(cons).map((con: string) => ({ content: truncateString(con, 5000) })).filter(item => item.content !== '')
         } : undefined,
         payment_methods: payment_methods ? {
-          create: splitByCommaOrNewline(payment_methods).map((method: string) => ({ method_name: method }))
+          create: splitByCommaOrNewline(payment_methods).map((method: string) => ({ method_name: truncateString(method, 100) })).filter(item => item.method_name !== '')
         } : undefined,
         currencies: currencies ? {
-          create: splitByCommaOrNewline(currencies).map((curr: string) => ({ currency_code: curr }))
+          create: splitByCommaOrNewline(currencies).map((curr: string) => ({ currency_code: truncateString(curr, 20) })).filter(item => item.currency_code !== '')
         } : undefined,
         game_providers: game_providers ? {
-          create: splitByCommaOrNewline(game_providers).map((prov: string) => ({ provider_name: prov }))
+          create: splitByCommaOrNewline(game_providers).map((prov: string) => ({ provider_name: truncateString(prov, 150) })).filter(item => item.provider_name !== '')
         } : undefined,
         tags: tags ? {
           create: tags.map((tagId: string) => ({ tag_id: tagId }))
@@ -190,21 +229,21 @@ export const createCasino = async (req: Request, res: Response) => {
         } : undefined,
         screenshots: screenshots ? {
           create: screenshots.map((screen: any) => ({
-            image_url: screen.image_url,
+            image_url: truncateString(screen.image_url, 5000),
             sort_order: screen.sort_order ? parseInt(screen.sort_order, 10) : 0
           }))
         } : undefined,
         gallery_videos: gallery_videos ? {
           create: gallery_videos.map((vid: any) => ({
-            video_url: vid.video_url,
-            title: vid.title || null,
+            video_url: truncateString(vid.video_url, 5000),
+            title: vid.title ? truncateString(vid.title, 255) : null,
             sort_order: vid.sort_order ? parseInt(vid.sort_order, 10) : 0
           }))
         } : undefined,
         faqs: faqs ? {
           create: faqs.map((faq: any) => ({
-            question: faq.question,
-            answer: faq.answer,
+            question: truncateString(faq.question, 5000),
+            answer: truncateString(faq.answer, 10000),
             sort_order: faq.sort_order ? parseInt(faq.sort_order, 10) : 0
           }))
         } : undefined,
@@ -261,7 +300,24 @@ export const updateCasino = async (req: Request, res: Response) => {
       return tx.casino.update({
         where: { id },
         data: {
-          ...casinoData,
+          name: casinoData.name !== undefined ? truncateString(casinoData.name, 255) : undefined,
+          slug: casinoData.slug !== undefined ? truncateString(casinoData.slug, 255) : undefined,
+          logo: casinoData.logo !== undefined ? truncateString(casinoData.logo, 5000) : undefined,
+          featured_image: casinoData.featured_image !== undefined ? truncateString(casinoData.featured_image, 5000) : undefined,
+          website_url: casinoData.website_url !== undefined ? truncateString(casinoData.website_url, 5000) : undefined,
+          affiliate_url: casinoData.affiliate_url !== undefined ? truncateString(casinoData.affiliate_url, 5000) : undefined,
+          affiliate_program_name: casinoData.affiliate_program_name !== undefined ? truncateString(casinoData.affiliate_program_name, 255) : undefined,
+          affiliate_program_link: casinoData.affiliate_program_link !== undefined ? truncateString(casinoData.affiliate_program_link, 5000) : undefined,
+          short_description: casinoData.short_description !== undefined ? truncateString(casinoData.short_description, 5000) : undefined,
+          overview: casinoData.overview !== undefined ? truncateString(casinoData.overview, 50000) : undefined,
+          editor_view: casinoData.editor_view !== undefined ? truncateString(casinoData.editor_view, 50000) : undefined,
+          company_name: casinoData.company_name !== undefined ? truncateString(casinoData.company_name, 255) : undefined,
+          license_authority: casinoData.license_authority !== undefined ? truncateString(casinoData.license_authority, 255) : undefined,
+          withdrawal_time: casinoData.withdrawal_time !== undefined ? truncateString(casinoData.withdrawal_time, 100) : undefined,
+          meta_title: casinoData.meta_title !== undefined ? truncateString(casinoData.meta_title, 255) : undefined,
+          meta_description: casinoData.meta_description !== undefined ? truncateString(casinoData.meta_description, 5000) : undefined,
+          status: casinoData.status !== undefined ? truncateString(casinoData.status, 20) : undefined,
+          ranking_position: casinoData.ranking_position !== undefined ? truncateString(casinoData.ranking_position, 20) : undefined,
           rating: casinoData.rating !== undefined ? (casinoData.rating ? parseFloat(casinoData.rating) : null) : undefined,
           minimum_deposit: casinoData.minimum_deposit !== undefined ? (casinoData.minimum_deposit ? parseFloat(casinoData.minimum_deposit) : null) : undefined,
           visits: casinoData.visits !== undefined ? parseInt(casinoData.visits, 10) : undefined,
@@ -279,35 +335,35 @@ export const updateCasino = async (req: Request, res: Response) => {
           meta_keywords: casinoData.meta_keywords !== undefined ? splitByCommaOrNewline(casinoData.meta_keywords) : undefined,
 
           languages: languages ? {
-            create: splitByCommaOrNewline(languages).map((lang: string) => ({ language: lang }))
+            create: splitByCommaOrNewline(languages).map((lang: string) => ({ language: truncateString(lang, 100) })).filter(item => item.language !== '')
           } : undefined,
           bonuses: bonuses ? {
             create: bonuses.map((bonus: any) => ({
-              title: bonus.title,
-              type: bonus.type,
-              amount: bonus.amount,
-              bonus_code: bonus.bonus_code || null,
-              wagering_requirement: bonus.wagering_requirement || null,
+              title: truncateString(bonus.title, 255),
+              type: truncateString(bonus.type, 100),
+              amount: truncateString(bonus.amount, 100),
+              bonus_code: bonus.bonus_code ? truncateString(bonus.bonus_code, 100) : null,
+              wagering_requirement: bonus.wagering_requirement ? truncateString(bonus.wagering_requirement, 100) : null,
               sort_order: bonus.sort_order ? parseInt(bonus.sort_order, 10) : 0
             }))
           } : undefined,
           features: features ? {
-            create: splitByCommaOrNewline(features).map((feat: string) => ({ feature: feat }))
+            create: splitByCommaOrNewline(features).map((feat: string) => ({ feature: truncateString(feat, 255) })).filter(item => item.feature !== '')
           } : undefined,
           pros: pros ? {
-            create: splitByCommaOrNewline(pros).map((pro: string) => ({ content: pro }))
+            create: splitByCommaOrNewline(pros).map((pro: string) => ({ content: truncateString(pro, 5000) })).filter(item => item.content !== '')
           } : undefined,
           cons: cons ? {
-            create: splitByCommaOrNewline(cons).map((con: string) => ({ content: con }))
+            create: splitByCommaOrNewline(cons).map((con: string) => ({ content: truncateString(con, 5000) })).filter(item => item.content !== '')
           } : undefined,
           payment_methods: payment_methods ? {
-            create: splitByCommaOrNewline(payment_methods).map((method: string) => ({ method_name: method }))
+            create: splitByCommaOrNewline(payment_methods).map((method: string) => ({ method_name: truncateString(method, 100) })).filter(item => item.method_name !== '')
           } : undefined,
           currencies: currencies ? {
-            create: splitByCommaOrNewline(currencies).map((curr: string) => ({ currency_code: curr }))
+            create: splitByCommaOrNewline(currencies).map((curr: string) => ({ currency_code: truncateString(curr, 20) })).filter(item => item.currency_code !== '')
           } : undefined,
           game_providers: game_providers ? {
-            create: splitByCommaOrNewline(game_providers).map((prov: string) => ({ provider_name: prov }))
+            create: splitByCommaOrNewline(game_providers).map((prov: string) => ({ provider_name: truncateString(prov, 150) })).filter(item => item.provider_name !== '')
           } : undefined,
           tags: tags ? {
             create: tags.map((tagId: string) => ({ tag_id: tagId }))
@@ -326,21 +382,21 @@ export const updateCasino = async (req: Request, res: Response) => {
           } : undefined,
           screenshots: screenshots ? {
             create: screenshots.map((screen: any) => ({
-              image_url: screen.image_url,
+              image_url: truncateString(screen.image_url, 5000),
               sort_order: screen.sort_order ? parseInt(screen.sort_order, 10) : 0
             }))
           } : undefined,
           gallery_videos: gallery_videos ? {
             create: gallery_videos.map((vid: any) => ({
-              video_url: vid.video_url,
-              title: vid.title || null,
+              video_url: truncateString(vid.video_url, 5000),
+              title: vid.title ? truncateString(vid.title, 255) : null,
               sort_order: vid.sort_order ? parseInt(vid.sort_order, 10) : 0
             }))
           } : undefined,
           faqs: faqs ? {
             create: faqs.map((faq: any) => ({
-              question: faq.question,
-              answer: faq.answer,
+              question: truncateString(faq.question, 5000),
+              answer: truncateString(faq.answer, 10000),
               sort_order: faq.sort_order ? parseInt(faq.sort_order, 10) : 0
             }))
           } : undefined,

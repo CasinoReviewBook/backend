@@ -129,7 +129,7 @@ const getCasino = async (req, res) => {
 exports.getCasino = getCasino;
 const createCasino = async (req, res) => {
     try {
-        const { game_providers, tags, categories, game_types, available_countries, restricted_countries, screenshots, gallery_videos, faqs, badges, reviews_summary, ...casinoData } = req.body;
+        const { languages, bonuses, features, pros, cons, payment_methods, currencies, game_providers, tags, categories, game_types, available_countries, restricted_countries, screenshots, gallery_videos, faqs, badges, reviews_summary, ...casinoData } = req.body;
         // Check if slug already exists
         if (casinoData.slug) {
             const existingCasino = await prisma_1.prisma.casino.findUnique({
