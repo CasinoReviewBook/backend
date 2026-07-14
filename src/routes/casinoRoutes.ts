@@ -10,7 +10,9 @@ import {
   exportCasinosTemplate,
   importCasinos,
   updateCasinoRanking,
-  updateCasinoPosition
+  updateCasinoPosition,
+  getCasinoBySlug,
+  getSimilarCasinos
 } from '../controllers/casinoController';
 
 const router = Router();
@@ -26,6 +28,10 @@ router.put('/ranking/bulk', updateCasinoRanking);
 
 // Position update (must come before /:id routes)
 router.put('/:id/position', updateCasinoPosition);
+
+// Slug-based routes (must come before /:id routes)
+router.get('/slug/:slug/similar', getSimilarCasinos);
+router.get('/slug/:slug', getCasinoBySlug);
 
 // Standard CRUD routes
 router.get('/', getCasinos);

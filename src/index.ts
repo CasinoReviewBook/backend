@@ -9,18 +9,36 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 4000;
 
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'https://casinoreviewsbook.com',
-];
+// Build allowed origins dynamically from environment variables
+const allowedOrigins: string[] = [];
 
+// Add development localhost URLs only if in development mode
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push('http://localhost:3000', 'http://localhost:3001');
+}
+
+// Add production frontend URL(s) from env
 if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
+  // Support multiple comma-separated URLs e.g. "https://casinoreviewsbook.com,https://www.casinoreviewsbook.com"
+  process.env.FRONTEND_URL.split(',').map(url => url.trim()).forEach(url => {
+    if (url && !allowedOrigins.includes(url)) allowedOrigins.push(url);
+  });
+}
+
+// Additional origins from ADDITIONAL_ORIGINS env (optional)
+if (process.env.ADDITIONAL_ORIGINS) {
+  process.env.ADDITIONAL_ORIGINS.split(',').map(url => url.trim()).forEach(url => {
+    if (url && !allowedOrigins.includes(url)) allowedOrigins.push(url);
+  });
 }
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin '${origin}' not allowed`));
+  },
   credentials: true,
 }));
 app.use(express.json());
@@ -79,32 +97,32 @@ app.get('/api/banned-countries', async (req, res) => {
   }
 });
 
+import { getCasinoBySlug, getSimilarCasinos } from './controllers/casinoController';
+
 // Public API endpoint for frontend
+app.get('/api/casinos/slug/:slug/similar', getSimilarCasinos);
+app.get('/api/casinos/slug/:slug', getCasinoBySlug);
 app.get('/api/casinos', async (req, res) => {
   try {
     const casinos = await prisma.casino.findMany({
       where: { status: 'active' },
       orderBy: { ranking_order: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        logo: true,
-        featured_image: true,
-        rating: true,
-        short_description: true,
-        featured: true,
-        website_url: true,
-        affiliate_url: true,
-        license_authority: true,
-        established_year: true,
-        minimum_deposit: true,
-        withdrawal_time: true,
-        crypto_supported: true,
-        mobile_friendly: true,
-        live_casino: true,
-        sports_betting: true,
-        ranking_order: true,
+      include: {
+        tags: {
+          include: {
+            tag: true
+          }
+        },
+        categories: {
+          include: {
+            category: true
+          }
+        },
+        available_countries: {
+          include: {
+            country: true
+          }
+        },
         bonuses: {
           where: { type: 'Welcome Bonus' },
           take: 1,

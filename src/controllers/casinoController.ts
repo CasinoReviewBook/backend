@@ -25,6 +25,21 @@ export const getCasinos = async (req: Request, res: Response) => {
     const casinos = await prisma.casino.findMany({
       orderBy: { created_at: 'desc' },
       include: {
+        tags: {
+          include: {
+            tag: true
+          }
+        },
+        categories: {
+          include: {
+            category: true
+          }
+        },
+        available_countries: {
+          include: {
+            country: true
+          }
+        },
         badges: {
           include: {
             badge: true
@@ -795,5 +810,134 @@ export const updateCasinoPosition = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error updating position:', error);
     res.status(500).json({ error: 'Failed to update position' });
+  }
+};
+
+export const getCasinoBySlug = async (req: Request, res: Response) => {
+  try {
+    const slug = String(req.params.slug);
+    const casino = await prisma.casino.findUnique({
+      where: { slug },
+      include: {
+        languages: true,
+        bonuses: true,
+        features: true,
+        pros: true,
+        cons: true,
+        payment_methods: true,
+        currencies: true,
+        game_providers: true,
+        tags: {
+          include: {
+            tag: true
+          }
+        },
+        categories: {
+          include: {
+            category: true
+          }
+        },
+        game_types: {
+          include: {
+            game_type: true
+          }
+        },
+        available_countries: {
+          include: {
+            country: true
+          }
+        },
+        restricted_countries: {
+          include: {
+            country: true
+          }
+        },
+        screenshots: true,
+        gallery_videos: true,
+        faqs: true,
+        badges: {
+          include: {
+            badge: true
+          }
+        }
+      }
+    });
+
+    if (!casino) {
+      res.status(404).json({ error: 'Casino not found' });
+      return;
+    }
+
+    res.json(casino);
+  } catch (error) {
+    console.error("Error fetching casino by slug:", error);
+    res.status(500).json({ error: 'Failed to fetch casino' });
+  }
+};
+
+export const getSimilarCasinos = async (req: Request, res: Response) => {
+  try {
+    const slug = String(req.params.slug);
+    
+    const targetCasino = await prisma.casino.findUnique({
+      where: { slug },
+      include: {
+        tags: true,
+        categories: true,
+      }
+    });
+
+    if (!targetCasino) {
+      res.status(404).json({ error: 'Casino not found' });
+      return;
+    }
+
+    const tagIds = targetCasino.tags.map(t => t.tag_id);
+    const categoryIds = targetCasino.categories.map(c => c.category_id);
+
+    const whereCondition: any = {
+      id: { not: targetCasino.id },
+      status: 'active',
+    };
+
+    const orConditions = [];
+    if (tagIds.length > 0) {
+      orConditions.push({ tags: { some: { tag_id: { in: tagIds } } } });
+    }
+    if (categoryIds.length > 0) {
+      orConditions.push({ categories: { some: { category_id: { in: categoryIds } } } });
+    }
+
+    if (orConditions.length > 0) {
+      whereCondition.OR = orConditions;
+    }
+
+    let similarCasinos = await prisma.casino.findMany({
+      where: whereCondition,
+      take: 8,
+      include: {
+        bonuses: true,
+        tags: { include: { tag: true } },
+        categories: { include: { category: true } },
+      }
+    });
+
+    if (similarCasinos.length === 0) {
+       similarCasinos = await prisma.casino.findMany({
+         where: { id: { not: targetCasino.id }, status: 'active' },
+         orderBy: { visits: 'desc' },
+         take: 8,
+         include: {
+           bonuses: true,
+           tags: { include: { tag: true } },
+           categories: { include: { category: true } },
+         }
+       });
+    }
+
+    res.json(similarCasinos);
+  } catch (error) {
+    console.error("Error fetching similar casinos:", error);
+    res.status(500).json({ error: 'Failed to fetch similar casinos' });
   }
 };
