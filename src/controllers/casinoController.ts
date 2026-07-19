@@ -875,6 +875,65 @@ export const getCasinoBySlug = async (req: Request, res: Response) => {
   }
 };
 
+export const getCasinosByCategorySlug = async (req: Request, res: Response) => {
+  try {
+    const categorySlug = String(req.params.categorySlug);
+    
+    // First find the category by slug (use findFirst since slug is not unique)
+    const category = await prisma.casinoCategory.findFirst({
+      where: { slug: categorySlug }
+    });
+
+    if (!category) {
+      res.status(404).json({ error: 'Category not found' });
+      return;
+    }
+
+    // Find casinos that have this category
+    const casinos = await prisma.casino.findMany({
+      where: {
+        status: 'active',
+        categories: {
+          some: {
+            category_id: category.id
+          }
+        }
+      },
+      orderBy: { ranking_order: 'asc' },
+      include: {
+        tags: {
+          include: {
+            tag: true
+          }
+        },
+        categories: {
+          include: {
+            category: true
+          }
+        },
+        available_countries: {
+          include: {
+            country: true
+          }
+        },
+        bonuses: {
+          where: { type: 'Welcome Bonus' },
+          take: 1,
+          orderBy: { sort_order: 'asc' }
+        }
+      }
+    });
+
+    res.json({
+      category,
+      casinos
+    });
+  } catch (error) {
+    console.error('Error fetching casinos by category slug:', error);
+    res.status(500).json({ error: 'Failed to fetch casinos by category' });
+  }
+};
+
 export const getSimilarCasinos = async (req: Request, res: Response) => {
   try {
     const slug = String(req.params.slug);

@@ -13,6 +13,49 @@ export const getCategories = async (req: Request, res: Response): Promise<void> 
   }
 };
 
+export const getCategoryBySlug = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const slug = String(req.params.slug);
+    const category = await prisma.casinoCategory.findFirst({
+      where: { slug },
+    });
+    if (!category) {
+      res.status(404).json({ error: 'Category not found' });
+      return;
+    }
+
+    // Fetch all active casinos that belong to this category
+    const casinos = await prisma.casino.findMany({
+      where: {
+        status: 'active',
+        categories: {
+          some: {
+            category_id: category.id,
+          },
+        },
+      },
+      orderBy: { ranking_order: 'asc' },
+      include: {
+        bonuses: true,
+        tags: {
+          include: { tag: true },
+        },
+        categories: {
+          include: { category: true },
+        },
+        badges: {
+          include: { badge: true },
+        },
+      },
+    });
+
+    res.json({ category, casinos });
+  } catch (error) {
+    console.error('Error fetching category by slug:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export const getCategoryById = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = String(req.params.id);

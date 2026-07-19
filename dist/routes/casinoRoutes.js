@@ -16,6 +16,9 @@ router.post('/import/excel', upload.single('file'), casinoController_1.importCas
 router.put('/ranking/bulk', casinoController_1.updateCasinoRanking);
 // Position update (must come before /:id routes)
 router.put('/:id/position', casinoController_1.updateCasinoPosition);
+// Slug-based routes (must come before /:id routes)
+router.get('/slug/:slug/similar', casinoController_1.getSimilarCasinos);
+router.get('/slug/:slug', casinoController_1.getCasinoBySlug);
 // Standard CRUD routes
 router.get('/', casinoController_1.getCasinos);
 router.get('/:id', casinoController_1.getCasino);

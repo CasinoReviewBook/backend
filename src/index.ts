@@ -31,7 +31,9 @@ if (process.env.ADDITIONAL_ORIGINS) {
     if (url && !allowedOrigins.includes(url)) allowedOrigins.push(url);
   });
 }
-
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+console.log("Allowed Origins:", allowedOrigins);
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
@@ -97,8 +99,15 @@ app.get('/api/banned-countries', async (req, res) => {
   }
 });
 
-import { getCasinoBySlug, getSimilarCasinos } from './controllers/casinoController';
-
+import {
+  getCasinoBySlug,
+  getSimilarCasinos,
+  getCasinosByCategorySlug,
+} from './controllers/casinoController';
+app.get(
+  '/api/casinos/category/:categorySlug',
+  getCasinosByCategorySlug
+);
 // Public API endpoint for frontend
 app.get('/api/casinos/slug/:slug/similar', getSimilarCasinos);
 app.get('/api/casinos/slug/:slug', getCasinoBySlug);

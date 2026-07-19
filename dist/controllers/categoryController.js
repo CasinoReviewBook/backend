@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCategory = exports.updateCategory = exports.createCategory = exports.getCategoryById = exports.getCategories = void 0;
+exports.deleteCategory = exports.updateCategory = exports.createCategory = exports.getCategoryById = exports.getCategoryBySlug = exports.getCategories = void 0;
 const prisma_1 = require("../prisma");
 const getCategories = async (req, res) => {
     try {
@@ -15,6 +15,48 @@ const getCategories = async (req, res) => {
     }
 };
 exports.getCategories = getCategories;
+const getCategoryBySlug = async (req, res) => {
+    try {
+        const slug = String(req.params.slug);
+        const category = await prisma_1.prisma.casinoCategory.findFirst({
+            where: { slug },
+        });
+        if (!category) {
+            res.status(404).json({ error: 'Category not found' });
+            return;
+        }
+        // Fetch all active casinos that belong to this category
+        const casinos = await prisma_1.prisma.casino.findMany({
+            where: {
+                status: 'active',
+                categories: {
+                    some: {
+                        category_id: category.id,
+                    },
+                },
+            },
+            orderBy: { ranking_order: 'asc' },
+            include: {
+                bonuses: true,
+                tags: {
+                    include: { tag: true },
+                },
+                categories: {
+                    include: { category: true },
+                },
+                badges: {
+                    include: { badge: true },
+                },
+            },
+        });
+        res.json({ category, casinos });
+    }
+    catch (error) {
+        console.error('Error fetching category by slug:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+exports.getCategoryBySlug = getCategoryBySlug;
 const getCategoryById = async (req, res) => {
     try {
         const id = String(req.params.id);

@@ -11,8 +11,39 @@ const path_1 = __importDefault(require("path"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const port = process.env.PORT || 4000;
+// Build allowed origins dynamically from environment variables
+const allowedOrigins = [];
+// Add development localhost URLs only if in development mode
+if (process.env.NODE_ENV !== 'production') {
+    allowedOrigins.push('http://localhost:3000', 'http://localhost:3001');
+}
+// Add production frontend URL(s) from env
+if (process.env.FRONTEND_URL) {
+    // Support multiple comma-separated URLs e.g. "https://casinoreviewsbook.com,https://www.casinoreviewsbook.com"
+    process.env.FRONTEND_URL.split(',').map(url => url.trim()).forEach(url => {
+        if (url && !allowedOrigins.includes(url))
+            allowedOrigins.push(url);
+    });
+}
+// Additional origins from ADDITIONAL_ORIGINS env (optional)
+if (process.env.ADDITIONAL_ORIGINS) {
+    process.env.ADDITIONAL_ORIGINS.split(',').map(url => url.trim()).forEach(url => {
+        if (url && !allowedOrigins.includes(url))
+            allowedOrigins.push(url);
+    });
+}
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+console.log("Allowed Origins:", allowedOrigins);
 app.use((0, cors_1.default)({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+        if (!origin)
+            return callback(null, true);
+        if (allowedOrigins.includes(origin))
+            return callback(null, true);
+        callback(new Error(`CORS: origin '${origin}' not allowed`));
+    },
     credentials: true,
 }));
 app.use(express_1.default.json());
@@ -67,21 +98,31 @@ app.get('/api/banned-countries', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch banned countries' });
     }
 });
+const casinoController_1 = require("./controllers/casinoController");
 // Public API endpoint for frontend
+app.get('/api/casinos/slug/:slug/similar', casinoController_1.getSimilarCasinos);
+app.get('/api/casinos/slug/:slug', casinoController_1.getCasinoBySlug);
 app.get('/api/casinos', async (req, res) => {
     try {
         const casinos = await prisma_1.prisma.casino.findMany({
             where: { status: 'active' },
-            orderBy: { rating: 'desc' },
-            take: 3,
-            select: {
-                id: true,
-                name: true,
-                slug: true,
-                logo: true,
-                rating: true,
-                short_description: true,
-                featured: true,
+            orderBy: { ranking_order: 'asc' },
+            include: {
+                tags: {
+                    include: {
+                        tag: true
+                    }
+                },
+                categories: {
+                    include: {
+                        category: true
+                    }
+                },
+                available_countries: {
+                    include: {
+                        country: true
+                    }
+                },
                 bonuses: {
                     where: { type: 'Welcome Bonus' },
                     take: 1,
