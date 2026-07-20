@@ -12,8 +12,7 @@ import {
   updateCasinoRanking,
   updateCasinoPosition,
   getCasinoBySlug,
-  getSimilarCasinos,
-  getCasinosByCategorySlug
+  getSimilarCasinos
 } from '../controllers/casinoController';
 
 const router = Router();
@@ -33,7 +32,6 @@ router.put('/:id/position', updateCasinoPosition);
 // Slug-based routes (must come before /:id routes)
 router.get('/slug/:slug/similar', getSimilarCasinos);
 router.get('/slug/:slug', getCasinoBySlug);
-router.get('/category/:categorySlug', getCasinosByCategorySlug);
 
 // Standard CRUD routes
 router.get('/', getCasinos);

@@ -173,6 +173,9 @@ export const createCasino = async (req: Request, res: Response) => {
         short_description: truncateString(casinoData.short_description, 5000),
         overview: truncateString(casinoData.overview, 50000),
         editor_view: truncateString(casinoData.editor_view, 50000),
+        editor_name: truncateString(casinoData.editor_name, 255),
+        editor_position: truncateString(casinoData.editor_position, 255),
+        editor_experience_years: casinoData.editor_experience_years ? parseInt(casinoData.editor_experience_years, 10) : null,
         company_name: truncateString(casinoData.company_name, 255),
         license_authority: truncateString(casinoData.license_authority, 255),
         withdrawal_time: truncateString(casinoData.withdrawal_time, 100),
@@ -326,6 +329,9 @@ export const updateCasino = async (req: Request, res: Response) => {
           short_description: casinoData.short_description !== undefined ? truncateString(casinoData.short_description, 5000) : undefined,
           overview: casinoData.overview !== undefined ? truncateString(casinoData.overview, 50000) : undefined,
           editor_view: casinoData.editor_view !== undefined ? truncateString(casinoData.editor_view, 50000) : undefined,
+          editor_name: casinoData.editor_name !== undefined ? truncateString(casinoData.editor_name, 255) : undefined,
+          editor_position: casinoData.editor_position !== undefined ? truncateString(casinoData.editor_position, 255) : undefined,
+          editor_experience_years: casinoData.editor_experience_years !== undefined ? (casinoData.editor_experience_years ? parseInt(casinoData.editor_experience_years, 10) : null) : undefined,
           company_name: casinoData.company_name !== undefined ? truncateString(casinoData.company_name, 255) : undefined,
           license_authority: casinoData.license_authority !== undefined ? truncateString(casinoData.license_authority, 255) : undefined,
           withdrawal_time: casinoData.withdrawal_time !== undefined ? truncateString(casinoData.withdrawal_time, 100) : undefined,
@@ -872,65 +878,6 @@ export const getCasinoBySlug = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching casino by slug:", error);
     res.status(500).json({ error: 'Failed to fetch casino' });
-  }
-};
-
-export const getCasinosByCategorySlug = async (req: Request, res: Response) => {
-  try {
-    const categorySlug = String(req.params.categorySlug);
-    
-    // First find the category by slug (use findFirst since slug is not unique)
-    const category = await prisma.casinoCategory.findFirst({
-      where: { slug: categorySlug }
-    });
-
-    if (!category) {
-      res.status(404).json({ error: 'Category not found' });
-      return;
-    }
-
-    // Find casinos that have this category
-    const casinos = await prisma.casino.findMany({
-      where: {
-        status: 'active',
-        categories: {
-          some: {
-            category_id: category.id
-          }
-        }
-      },
-      orderBy: { ranking_order: 'asc' },
-      include: {
-        tags: {
-          include: {
-            tag: true
-          }
-        },
-        categories: {
-          include: {
-            category: true
-          }
-        },
-        available_countries: {
-          include: {
-            country: true
-          }
-        },
-        bonuses: {
-          where: { type: 'Welcome Bonus' },
-          take: 1,
-          orderBy: { sort_order: 'asc' }
-        }
-      }
-    });
-
-    res.json({
-      category,
-      casinos
-    });
-  } catch (error) {
-    console.error('Error fetching casinos by category slug:', error);
-    res.status(500).json({ error: 'Failed to fetch casinos by category' });
   }
 };
 

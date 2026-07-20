@@ -66,6 +66,7 @@ import countryRoutes from './routes/countryRoutes';
 import gameTypeRoutes from './routes/gameTypeRoutes';
 import bannedCountryRoutes from './routes/bannedCountryRoutes';
 import regionRoutes from './routes/regionRoutes';
+import casinoReviewRoutes from './routes/casinoReviewRoutes';
 
 app.use('/api/admin/email-campaigns', emailRoutes);
 app.use('/api/admin/casinos', casinoRoutes);
@@ -85,6 +86,8 @@ app.use('/api/admin/countries', countryRoutes);
 app.use('/api/admin/game-types', gameTypeRoutes);
 app.use('/api/admin/banned-countries', bannedCountryRoutes);
 app.use('/api/admin/regions', regionRoutes);
+app.use('/api/admin/casino-reviews', casinoReviewRoutes);
+app.use('/api/casino-reviews', casinoReviewRoutes);
 
 // Public endpoint: get all banned country codes
 app.get('/api/banned-countries', async (req, res) => {
@@ -102,12 +105,7 @@ app.get('/api/banned-countries', async (req, res) => {
 import {
   getCasinoBySlug,
   getSimilarCasinos,
-  getCasinosByCategorySlug,
 } from './controllers/casinoController';
-app.get(
-  '/api/casinos/category/:categorySlug',
-  getCasinosByCategorySlug
-);
 // Public API endpoint for frontend
 app.get('/api/casinos/slug/:slug/similar', getSimilarCasinos);
 app.get('/api/casinos/slug/:slug', getCasinoBySlug);
