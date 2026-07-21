@@ -109,6 +109,80 @@ import {
 // Public API endpoint for frontend
 app.get('/api/casinos/slug/:slug/similar', getSimilarCasinos);
 app.get('/api/casinos/slug/:slug', getCasinoBySlug);
+app.get('/api/casinos/category/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const category = await prisma.casinoCategory.findUnique({
+      where: {
+        slug,
+      },
+    });
+
+    if (!category) {
+      return res.status(404).json({
+        error: 'Category not found',
+      });
+    }
+
+    const casinos = await prisma.casino.findMany({
+      where: {
+        status: 'active',
+
+        categories: {
+          some: {
+            category_id: category.id,
+          },
+        },
+      },
+
+      orderBy: {
+        ranking_order: 'asc',
+      },
+
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+
+        available_countries: {
+          include: {
+            country: true,
+          },
+        },
+
+        bonuses: {
+          where: {
+            type: 'Welcome Bonus',
+          },
+          take: 1,
+          orderBy: {
+            sort_order: 'asc',
+          },
+        },
+      },
+    });
+
+    return res.json({
+      category,
+      casinos,
+    });
+  } catch (error) {
+    console.error('Error fetching category casinos:', error);
+
+    return res.status(500).json({
+      error: 'Failed to fetch category casinos',
+    });
+  }
+});
 app.get('/api/casinos', async (req, res) => {
   try {
     const casinos = await prisma.casino.findMany({
