@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUser = exports.updateUser = exports.createUser = exports.getUser = exports.getUsers = void 0;
+exports.registerUser = exports.deleteUser = exports.updateUser = exports.createUser = exports.getUser = exports.getUsers = void 0;
 const prisma_1 = require("../prisma");
 const mapUserData = (body) => {
     return {
@@ -10,6 +10,8 @@ const mapUserData = (body) => {
         avatar: body.avatar || null,
         status: body.status || 'active',
         email_verified: typeof body.email_verified === 'boolean' ? body.email_verified : body.email_verified === 'true',
+        phone: body.phone || null,
+        country: body.country || null,
     };
 };
 const getUsers = async (req, res) => {
@@ -82,4 +84,36 @@ const deleteUser = async (req, res) => {
     }
 };
 exports.deleteUser = deleteUser;
+// Public registration endpoint — no admin auth required
+const registerUser = async (req, res) => {
+    try {
+        const { name, email, phone, country } = req.body;
+        if (!name || !email) {
+            return res.status(400).json({ error: 'Name and email are required' });
+        }
+        // Check if email already exists
+        const existing = await prisma_1.prisma.user.findUnique({ where: { email } });
+        if (existing) {
+            // Return existing user so frontend can restore session
+            return res.json(existing);
+        }
+        const newUser = await prisma_1.prisma.user.create({
+            data: {
+                name,
+                email,
+                phone: phone || null,
+                country: country || null,
+                role: 'user',
+                status: 'active',
+                email_verified: false,
+            }
+        });
+        return res.status(201).json(newUser);
+    }
+    catch (error) {
+        console.error("Error registering user:", error);
+        return res.status(500).json({ error: 'Failed to register user' });
+    }
+};
+exports.registerUser = registerUser;
 //# sourceMappingURL=userController.js.map

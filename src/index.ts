@@ -67,6 +67,9 @@ import gameTypeRoutes from './routes/gameTypeRoutes';
 import bannedCountryRoutes from './routes/bannedCountryRoutes';
 import regionRoutes from './routes/regionRoutes';
 import casinoReviewRoutes from './routes/casinoReviewRoutes';
+import { registerUser } from './controllers/userController';
+import contactTicketRoutes from './routes/contactTicketRoutes';
+import { createTicket, getUserTickets } from './controllers/contactTicketController';
 
 app.use('/api/admin/email-campaigns', emailRoutes);
 app.use('/api/admin/casinos', casinoRoutes);
@@ -87,7 +90,17 @@ app.use('/api/admin/game-types', gameTypeRoutes);
 app.use('/api/admin/banned-countries', bannedCountryRoutes);
 app.use('/api/admin/regions', regionRoutes);
 app.use('/api/admin/casino-reviews', casinoReviewRoutes);
+app.use('/api/admin/contact-tickets', contactTicketRoutes);
 app.use('/api/casino-reviews', casinoReviewRoutes);
+
+// Public registration endpoint
+app.post('/api/register', registerUser);
+
+// Public contact tickets endpoints
+app.post('/api/contact-tickets', createTicket);
+app.get('/api/contact-tickets/my-tickets', getUserTickets);
+
+
 
 // Public endpoint: get all banned country codes
 app.get('/api/banned-countries', async (req, res) => {

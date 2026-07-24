@@ -40,9 +40,11 @@ export const getBlogs = async (req: Request, res: Response): Promise<void> => {
 
 export const getBlogById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = String(req.params.id);
-    const blog = await prisma.blog.findUnique({
-      where: { id },
+    const identifier = String(req.params.id);
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    
+    const blog = await prisma.blog.findFirst({
+      where: isUUID ? { id: identifier } : { slug: identifier },
       include: {
         author: {
           select: {

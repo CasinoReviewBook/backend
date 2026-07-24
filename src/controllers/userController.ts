@@ -9,6 +9,8 @@ const mapUserData = (body: any) => {
     avatar: body.avatar || null,
     status: body.status || 'active',
     email_verified: typeof body.email_verified === 'boolean' ? body.email_verified : body.email_verified === 'true',
+    phone: body.phone || null,
+    country: body.country || null,
   };
 };
 
@@ -72,5 +74,40 @@ export const deleteUser = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error deleting user:", error);
     res.status(500).json({ error: 'Failed to delete user' });
+  }
+};
+
+// Public registration endpoint — no admin auth required
+export const registerUser = async (req: Request, res: Response) => {
+  try {
+    const { name, email, phone, country } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+
+    // Check if email already exists
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      // Return existing user so frontend can restore session
+      return res.json(existing);
+    }
+
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        phone: phone || null,
+        country: country || null,
+        role: 'user',
+        status: 'active',
+        email_verified: false,
+      }
+    });
+
+    return res.status(201).json(newUser);
+  } catch (error) {
+    console.error("Error registering user:", error);
+    return res.status(500).json({ error: 'Failed to register user' });
   }
 };

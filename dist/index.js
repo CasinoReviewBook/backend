@@ -67,6 +67,10 @@ const countryRoutes_1 = __importDefault(require("./routes/countryRoutes"));
 const gameTypeRoutes_1 = __importDefault(require("./routes/gameTypeRoutes"));
 const bannedCountryRoutes_1 = __importDefault(require("./routes/bannedCountryRoutes"));
 const regionRoutes_1 = __importDefault(require("./routes/regionRoutes"));
+const casinoReviewRoutes_1 = __importDefault(require("./routes/casinoReviewRoutes"));
+const userController_1 = require("./controllers/userController");
+const contactTicketRoutes_1 = __importDefault(require("./routes/contactTicketRoutes"));
+const contactTicketController_1 = require("./controllers/contactTicketController");
 app.use('/api/admin/email-campaigns', emailRoutes_1.default);
 app.use('/api/admin/casinos', casinoRoutes_1.default);
 app.use('/api/admin/users', userRoutes_1.default);
@@ -85,6 +89,14 @@ app.use('/api/admin/countries', countryRoutes_1.default);
 app.use('/api/admin/game-types', gameTypeRoutes_1.default);
 app.use('/api/admin/banned-countries', bannedCountryRoutes_1.default);
 app.use('/api/admin/regions', regionRoutes_1.default);
+app.use('/api/admin/casino-reviews', casinoReviewRoutes_1.default);
+app.use('/api/admin/contact-tickets', contactTicketRoutes_1.default);
+app.use('/api/casino-reviews', casinoReviewRoutes_1.default);
+// Public registration endpoint
+app.post('/api/register', userController_1.registerUser);
+// Public contact tickets endpoints
+app.post('/api/contact-tickets', contactTicketController_1.createTicket);
+app.get('/api/contact-tickets/my-tickets', contactTicketController_1.getUserTickets);
 // Public endpoint: get all banned country codes
 app.get('/api/banned-countries', async (req, res) => {
     try {
@@ -102,6 +114,70 @@ const casinoController_1 = require("./controllers/casinoController");
 // Public API endpoint for frontend
 app.get('/api/casinos/slug/:slug/similar', casinoController_1.getSimilarCasinos);
 app.get('/api/casinos/slug/:slug', casinoController_1.getCasinoBySlug);
+app.get('/api/casinos/category/:slug', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const category = await prisma_1.prisma.casinoCategory.findUnique({
+            where: {
+                slug,
+            },
+        });
+        if (!category) {
+            return res.status(404).json({
+                error: 'Category not found',
+            });
+        }
+        const casinos = await prisma_1.prisma.casino.findMany({
+            where: {
+                status: 'active',
+                categories: {
+                    some: {
+                        category_id: category.id,
+                    },
+                },
+            },
+            orderBy: {
+                ranking_order: 'asc',
+            },
+            include: {
+                tags: {
+                    include: {
+                        tag: true,
+                    },
+                },
+                categories: {
+                    include: {
+                        category: true,
+                    },
+                },
+                available_countries: {
+                    include: {
+                        country: true,
+                    },
+                },
+                bonuses: {
+                    where: {
+                        type: 'Welcome Bonus',
+                    },
+                    take: 1,
+                    orderBy: {
+                        sort_order: 'asc',
+                    },
+                },
+            },
+        });
+        return res.json({
+            category,
+            casinos,
+        });
+    }
+    catch (error) {
+        console.error('Error fetching category casinos:', error);
+        return res.status(500).json({
+            error: 'Failed to fetch category casinos',
+        });
+    }
+});
 app.get('/api/casinos', async (req, res) => {
     try {
         const casinos = await prisma_1.prisma.casino.findMany({

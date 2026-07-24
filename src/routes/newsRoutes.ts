@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { getNews, getNewsById, createNews, updateNews, deleteNews } from '../controllers/newsController';
+import { getNews, getNewsById, createNews, updateNews, deleteNews, getNewsSlugs } from '../controllers/newsController';
 
 const router = Router();
 
 router.get('/', getNews);
+router.get('/slugs', getNewsSlugs);
 router.get('/:id', getNewsById);
 router.post('/', createNews);
 router.put('/:id', updateNews);

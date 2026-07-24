@@ -40,9 +40,11 @@ export const getNews = async (req: Request, res: Response): Promise<void> => {
 
 export const getNewsById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = String(req.params.id);
-    const news = await prisma.news.findUnique({
-      where: { id },
+    const identifier = String(req.params.id);
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    
+    const news = await prisma.news.findFirst({
+      where: isUUID ? { id: identifier } : { slug: identifier },
       include: {
         author: {
           select: {
@@ -138,6 +140,27 @@ export const deleteNews = async (req: Request, res: Response): Promise<void> => 
     res.status(204).send();
   } catch (error) {
     console.error('Error deleting news:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getNewsSlugs = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const news = await prisma.news.findMany({
+      select: {
+        slug: true,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    res.json(news);
+  } catch (error) {
+    console.error('Error fetching news slugs:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
