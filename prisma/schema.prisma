@@ -42,6 +42,7 @@ model Casino {
   featured_image          String?
   website_url             String?
   affiliate_url           String?
+  default_affiliate_url   String?
   affiliate_program_name  String?   @db.VarChar(255)
   affiliate_program_link  String?
   short_description       String?
@@ -98,6 +99,7 @@ model Casino {
   badges                  CasinoBadgeMapping[]
   reviews_summary         CasinoReviewsSummary?
   casino_reviews          CasinoReview[]
+  country_affiliate_links CasinoAffiliateLink[]
 
   reviews                 Review[]
   favorited_by            FavoriteCasino[]
@@ -234,6 +236,7 @@ model Country {
 
   available_in_casinos   CasinoAvailableCountry[]
   restricted_in_casinos  CasinoRestrictedCountry[]
+  casino_affiliate_links CasinoAffiliateLink[]
 }
 
 model Region {
@@ -313,6 +316,22 @@ model CasinoReviewsSummary {
   total_clicks   Int?     @default(0)
   total_views    Int?     @default(0)
   casino         Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+}
+
+model CasinoAffiliateLink {
+  id             String   @id @default(uuid()) @db.Uuid
+  casino_id      String   @db.Uuid
+  country_id     String   @db.Uuid
+  affiliate_url  String
+  created_at     DateTime? @default(now()) @db.Timestamp()
+  updated_at     DateTime? @updatedAt @db.Timestamp()
+
+  casino         Casino   @relation(fields: [casino_id], references: [id], onDelete: Cascade)
+  country        Country  @relation(fields: [country_id], references: [id], onDelete: Cascade)
+
+  @@unique([casino_id, country_id])
+  @@index([casino_id])
+  @@index([country_id])
 }
 
 model AffiliateLink {

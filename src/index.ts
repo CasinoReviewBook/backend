@@ -67,6 +67,7 @@ import gameTypeRoutes from './routes/gameTypeRoutes';
 import bannedCountryRoutes from './routes/bannedCountryRoutes';
 import regionRoutes from './routes/regionRoutes';
 import casinoReviewRoutes from './routes/casinoReviewRoutes';
+import casinoAffiliateLinkRoutes from './routes/casinoAffiliateLinkRoutes';
 import { registerUser } from './controllers/userController';
 import contactTicketRoutes from './routes/contactTicketRoutes';
 import { createTicket, getUserTickets } from './controllers/contactTicketController';
@@ -90,6 +91,8 @@ app.use('/api/admin/game-types', gameTypeRoutes);
 app.use('/api/admin/banned-countries', bannedCountryRoutes);
 app.use('/api/admin/regions', regionRoutes);
 app.use('/api/admin/casino-reviews', casinoReviewRoutes);
+app.use('/api/admin/casino-affiliate-links', casinoAffiliateLinkRoutes);
+app.use('/api/casino-affiliate-links', casinoAffiliateLinkRoutes);
 app.use('/api/admin/contact-tickets', contactTicketRoutes);
 app.use('/api/casino-reviews', casinoReviewRoutes);
 
