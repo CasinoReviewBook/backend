@@ -29,7 +29,7 @@ export const getNews = async (req: Request, res: Response): Promise<void> => {
           },
         },
       },
-      orderBy: { created_at: 'desc' },
+      orderBy: { sort_order: 'asc' },
     });
     res.json(news);
   } catch (error) {
@@ -162,5 +162,72 @@ export const getNewsSlugs = async (
   } catch (error) {
     console.error('Error fetching news slugs:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const updateNewsRanking = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { rankings } = req.body;
+    
+    if (!Array.isArray(rankings)) {
+      res.status(400).json({ error: 'Invalid rankings data' });
+      return;
+    }
+
+    await prisma.$transaction(
+      rankings.map((ranking: { id: string; sort_order: number }) =>
+        prisma.news.update({
+          where: { id: ranking.id },
+          data: { sort_order: ranking.sort_order }
+        })
+      )
+    );
+
+    res.json({ message: 'Rankings updated successfully' });
+  } catch (error) {
+    console.error('Error updating news rankings:', error);
+    res.status(500).json({ error: 'Failed to update rankings' });
+  }
+};
+
+export const updateNewsPosition = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    const { position } = req.body;
+
+    if (position !== 'top' && position !== 'bottom') {
+      res.status(400).json({ error: 'Invalid position. Must be "top" or "bottom"' });
+      return;
+    }
+
+    const newsItem = await prisma.news.findUnique({
+      where: { id }
+    });
+
+    if (!newsItem) {
+      res.status(404).json({ error: 'News not found' });
+      return;
+    }
+
+    const allNews = await prisma.news.findMany({
+      orderBy: { sort_order: 'asc' }
+    });
+
+    let newSortOrder: number;
+    if (position === 'top') {
+      newSortOrder = Math.min(...allNews.map(n => n.sort_order || 0)) - 1;
+    } else {
+      newSortOrder = Math.max(...allNews.map(n => n.sort_order || 0)) + 1;
+    }
+
+    await prisma.news.update({
+      where: { id },
+      data: { sort_order: newSortOrder }
+    });
+
+    res.json({ message: 'Position updated successfully' });
+  } catch (error) {
+    console.error('Error updating news position:', error);
+    res.status(500).json({ error: 'Failed to update position' });
   }
 };

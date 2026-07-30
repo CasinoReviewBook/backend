@@ -29,7 +29,7 @@ export const getBlogs = async (req: Request, res: Response): Promise<void> => {
           },
         },
       },
-      orderBy: { created_at: 'desc' },
+      orderBy: { sort_order: 'asc' },
     });
     res.json(blogs);
   } catch (error) {
@@ -143,5 +143,72 @@ export const deleteBlog = async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     console.error('Error deleting blog:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const updateBlogRanking = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { rankings } = req.body;
+    
+    if (!Array.isArray(rankings)) {
+      res.status(400).json({ error: 'Invalid rankings data' });
+      return;
+    }
+
+    await prisma.$transaction(
+      rankings.map((ranking: { id: string; sort_order: number }) =>
+        prisma.blog.update({
+          where: { id: ranking.id },
+          data: { sort_order: ranking.sort_order }
+        })
+      )
+    );
+
+    res.json({ message: 'Rankings updated successfully' });
+  } catch (error) {
+    console.error('Error updating blog rankings:', error);
+    res.status(500).json({ error: 'Failed to update rankings' });
+  }
+};
+
+export const updateBlogPosition = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = String(req.params.id);
+    const { position } = req.body;
+
+    if (position !== 'top' && position !== 'bottom') {
+      res.status(400).json({ error: 'Invalid position. Must be "top" or "bottom"' });
+      return;
+    }
+
+    const blog = await prisma.blog.findUnique({
+      where: { id }
+    });
+
+    if (!blog) {
+      res.status(404).json({ error: 'Blog not found' });
+      return;
+    }
+
+    const allBlogs = await prisma.blog.findMany({
+      orderBy: { sort_order: 'asc' }
+    });
+
+    let newSortOrder: number;
+    if (position === 'top') {
+      newSortOrder = Math.min(...allBlogs.map(b => b.sort_order || 0)) - 1;
+    } else {
+      newSortOrder = Math.max(...allBlogs.map(b => b.sort_order || 0)) + 1;
+    }
+
+    await prisma.blog.update({
+      where: { id },
+      data: { sort_order: newSortOrder }
+    });
+
+    res.json({ message: 'Position updated successfully' });
+  } catch (error) {
+    console.error('Error updating blog position:', error);
+    res.status(500).json({ error: 'Failed to update position' });
   }
 };

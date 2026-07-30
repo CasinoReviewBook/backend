@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getCategories, getCategoryById, getCategoryBySlug, createCategory, updateCategory, deleteCategory } from '../controllers/categoryController';
+import { getCategories, getCategoryById, getCategoryBySlug, createCategory, updateCategory, deleteCategory, updateCategoryRanking, updateCategoryPosition } from '../controllers/categoryController';
 
 const router = Router();
 
@@ -10,5 +10,7 @@ router.get('/:id', getCategoryById);
 router.post('/', createCategory);
 router.put('/:id', updateCategory);
 router.delete('/:id', deleteCategory);
+router.put('/ranking/bulk', updateCategoryRanking);
+router.put('/:id/position', updateCategoryPosition);
 
 export default router;
